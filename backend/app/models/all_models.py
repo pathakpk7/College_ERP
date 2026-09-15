@@ -4,7 +4,8 @@ from sqlalchemy.orm import relationship
 from app.db.database import Base
 from app.utils.enums import (
     UserRole, AttendanceStatus, NocStatus, AssessmentType,
-    FeeStatus, LibraryStatus, GrievanceStatus, MaterialType
+    FeeStatus, LibraryStatus, GrievanceStatus, MaterialType,
+    BookCategory, BookOrderType, BookOrderStatus
 )
 
 
@@ -294,10 +295,56 @@ class AcademicMaterial(Base):
     subject_code = Column(String, nullable=False)
     subject_name = Column(String, nullable=False)
     uploaded_by_name = Column(String, nullable=False)
-    file_path = Column(String, nullable=False)
+    file_path = Column(String, nullable=True)
+    external_link = Column(String, nullable=True)
     material_type = Column(SQLEnum(MaterialType), default=MaterialType.NOTE, nullable=False)
+    target_year = Column(Integer, nullable=True)  # 1, 2, 3, 4 (None = All years)
+    semester_number = Column(Integer, nullable=True)  # 1 to 8 (None = All semesters)
+    target_branch = Column(String, nullable=True)  # e.g., "Computer Science & Engineering" (None = All branches)
+    target_section = Column(String, nullable=True)  # e.g., "A", "B" (None = All sections)
     due_date = Column(Date, nullable=True)
     upload_date = Column(Date, default=date.today)
+
+
+class StoreBook(Base):
+    __tablename__ = "store_books"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    author = Column(String, nullable=False)
+    category = Column(SQLEnum(BookCategory), default=BookCategory.COMPUTER_SCIENCE, nullable=False)
+    price = Column(Float, default=0.0, nullable=False)  # in INR (₹) for offline purchase
+    borrow_fee = Column(Float, default=50.0, nullable=False)  # in INR (₹) for 1-month borrow
+    rating = Column(Float, default=4.5)
+    cover_image = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    publisher = Column(String, nullable=True)
+    edition = Column(String, default="Latest Edition")
+    stock_quantity = Column(Integer, default=10)
+    is_available = Column(Boolean, default=True)
+    expected_restock_date = Column(Date, nullable=True)  # e.g., date when out of stock will be replenished
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    orders = relationship("StoreOrder", back_populates="book")
+
+
+
+class StoreOrder(Base):
+    __tablename__ = "store_orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    book_id = Column(Integer, ForeignKey("store_books.id"), nullable=False)
+    order_type = Column(SQLEnum(BookOrderType), default=BookOrderType.BORROW, nullable=False)
+    order_date = Column(Date, default=date.today)
+    due_date = Column(Date, nullable=True)  # 6 months for borrow
+    price_paid = Column(Float, default=0.0)
+    status = Column(SQLEnum(BookOrderStatus), default=BookOrderStatus.APPROVED, nullable=False)
+    remarks = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    student = relationship("Student")
+    book = relationship("StoreBook", back_populates="orders")
 
 
 class Notice(Base):
@@ -309,3 +356,4 @@ class Notice(Base):
     category = Column(String, default="ACADEMIC")
     posted_by = Column(String, nullable=False)
     posted_date = Column(Date, default=date.today)
+

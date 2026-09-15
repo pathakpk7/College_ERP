@@ -1,14 +1,20 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
 from sqlalchemy.orm import Session
-from typing import List
-from datetime import date
+from typing import List, Optional
+from datetime import date, datetime
+import os
+import uuid
+import shutil
 from app.db.database import get_db
 from app.core.dependencies import get_current_user, require_role
-from app.models.all_models import User, Faculty, Student, Subject, Attendance, Mark, AcademicMaterial
+from app.models.all_models import User, Faculty, Student, Subject, Attendance, Mark, AcademicMaterial, TimetableSlot
 from app.utils.enums import UserRole, AttendanceStatus, AssessmentType, MaterialType
 from pydantic import BaseModel
 
 router = APIRouter()
+
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 class MarkAttendanceItem(BaseModel):
@@ -17,7 +23,7 @@ class MarkAttendanceItem(BaseModel):
     date: date
     status: AttendanceStatus
     class_number: int = 1
-    class_numbers: List[int] = None
+    class_numbers: Optional[List[int]] = None
 
 
 class SubmitMarkItem(BaseModel):
@@ -30,12 +36,17 @@ class SubmitMarkItem(BaseModel):
 
 class UploadMaterialRequest(BaseModel):
     title: str
-    description: str
+    description: Optional[str] = None
     subject_code: str
     subject_name: str
-    file_path: str
-    material_type: MaterialType
-    due_date: date = None
+    file_path: Optional[str] = None
+    external_link: Optional[str] = None
+    material_type: MaterialType = MaterialType.NOTE
+    target_year: Optional[int] = None
+    semester_number: Optional[int] = None
+    target_branch: Optional[str] = None
+    target_section: Optional[str] = None
+    due_date: Optional[date] = None
 
 
 @router.get("/dashboard")
@@ -56,11 +67,83 @@ def get_faculty_dashboard(current_user: User = Depends(require_role([UserRole.FA
     }
 
 
+@router.get("/classes")
+def get_faculty_classes(
+    current_user: User = Depends(require_role([UserRole.FACULTY, UserRole.ADMIN])),
+    db: Session = Depends(get_db)
+):
+    faculty = db.query(Faculty).filter(Faculty.user_id == current_user.id).first()
+    fac_name = faculty.full_name if faculty else "Dr. Robert Smith"
+
+    # Fetch slots for this faculty, or all unique class slots if admin/fallback
+    slots = db.query(TimetableSlot).all()
+    
+    # Group unique class combinations
+    classes_dict = {}
+    for slot in slots:
+        key = (slot.semester, slot.branch, slot.section, slot.subject_code, slot.subject_name)
+        if key not in classes_dict:
+            # Find subject id if exists
+            sub = db.query(Subject).filter(Subject.subject_code == slot.subject_code).first()
+            classes_dict[key] = {
+                "semester": slot.semester,
+                "year": ((slot.semester + 1) // 2),
+                "branch": slot.branch,
+                "section": slot.section,
+                "subject_code": slot.subject_code or "CS701",
+                "subject_name": slot.subject_name,
+                "subject_id": sub.id if sub else 1,
+                "room_number": slot.room_number,
+                "faculty_name": slot.faculty_name
+            }
+
+    # If no timetable slots found, provide standard fallback classes
+    if not classes_dict:
+        subjects = db.query(Subject).all()
+        return [
+            {
+                "semester": 7,
+                "year": 4,
+                "branch": "Computer Science & Engineering",
+                "section": "A",
+                "subject_code": subjects[0].subject_code if subjects else "BCS701",
+                "subject_name": subjects[0].subject_name if subjects else "ARTIFICIAL INTELLIGENCE",
+                "subject_id": subjects[0].id if subjects else 1,
+                "room_number": "LH 101",
+                "faculty_name": fac_name
+            },
+            {
+                "semester": 7,
+                "year": 4,
+                "branch": "Computer Science & Engineering",
+                "section": "B",
+                "subject_code": subjects[0].subject_code if subjects else "BCS701",
+                "subject_name": subjects[0].subject_name if subjects else "ARTIFICIAL INTELLIGENCE",
+                "subject_id": subjects[0].id if subjects else 1,
+                "room_number": "LH 102",
+                "faculty_name": fac_name
+            },
+            {
+                "semester": 6,
+                "year": 3,
+                "branch": "Information Technology",
+                "section": "A",
+                "subject_code": "BIT601",
+                "subject_name": "WEB SERVICES & CLOUD",
+                "subject_id": 2,
+                "room_number": "LH 204",
+                "faculty_name": fac_name
+            }
+        ]
+
+    return list(classes_dict.values())
+
+
 @router.get("/students")
 def get_enrolled_students(
-    branch: str = None,
-    semester: int = None,
-    section: str = None,
+    branch: Optional[str] = None,
+    semester: Optional[int] = None,
+    section: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     query = db.query(Student)
@@ -73,44 +156,9 @@ def get_enrolled_students(
     
     students = query.all()
 
-    # If no specific students match this exact class filter, fallback to all students or generate dynamic class roster
-    if not students and (branch or semester or section):
-        base_students = db.query(Student).all()
-        target_branch = branch if branch else "Computer Science & Engineering"
-        target_sem = semester if semester else 7
-        target_sec = section if section else "A"
-
-        code_prefix = "CSE"
-        if "info" in target_branch.lower() or "it" in target_branch.lower():
-            code_prefix = "IT"
-        elif "electron" in target_branch.lower() or "ece" in target_branch.lower():
-            code_prefix = "ECE"
-        elif "mechan" in target_branch.lower() or "me" in target_branch.lower():
-            code_prefix = "ME"
-
-        sample_names = [
-          "Alex Johnson", "Priya Sharma", "Rahul Verma",
-          "Ananya Gupta", "Rohan Mehta", "Deepak Patel"
-        ]
-
-        dynamic_roster = []
-        for idx, name in enumerate(sample_names):
-            roll_num = f"2024{code_prefix}{target_sem}0{idx+1:02d}"
-            # Check if student exists in base_students, else create mock object
-            existing_s = base_students[idx % len(base_students)] if base_students else None
-            s_id = existing_s.id if existing_s else idx + 1
-            dynamic_roster.append({
-                "id": s_id,
-                "enrollment_number": roll_num,
-                "full_name": f"{name}",
-                "branch": target_branch,
-                "semester": target_sem,
-                "section": target_sec,
-                "email": f"{name.lower().replace(' ', '.')}@college.edu",
-                "cgpa": round(8.0 + (idx * 0.25) % 1.8, 2),
-                "backlogs": 0 if idx % 3 != 0 else 1
-            })
-        return dynamic_roster
+    # If no specific students match this exact class filter, fallback to all students
+    if not students:
+        students = db.query(Student).all()
 
     return [
         {
@@ -233,10 +281,84 @@ def upload_study_material(req: UploadMaterialRequest, current_user: User = Depen
         subject_name=req.subject_name,
         uploaded_by_name=faculty.full_name if faculty else current_user.username,
         file_path=req.file_path,
+        external_link=req.external_link,
         material_type=req.material_type,
+        target_year=req.target_year,
+        semester_number=req.semester_number,
+        target_branch=req.target_branch,
+        target_section=req.target_section,
         due_date=req.due_date,
         upload_date=date.today()
     )
     db.add(mat)
     db.commit()
     return {"message": "Academic material uploaded successfully."}
+
+
+@router.post("/materials/upload-file")
+async def upload_material_file(
+    title: str = Form(...),
+    subject_code: str = Form(...),
+    subject_name: str = Form(...),
+    material_type: MaterialType = Form(MaterialType.NOTE),
+    description: Optional[str] = Form(None),
+    target_year: Optional[int] = Form(None),
+    semester_number: Optional[int] = Form(None),
+    target_branch: Optional[str] = Form(None),
+    target_section: Optional[str] = Form(None),
+    external_link: Optional[str] = Form(None),
+    due_date: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None),
+    current_user: User = Depends(require_role([UserRole.FACULTY, UserRole.ADMIN])),
+    db: Session = Depends(get_db)
+):
+    faculty = db.query(Faculty).filter(Faculty.user_id == current_user.id).first()
+    uploaded_by = faculty.full_name if faculty else current_user.username
+
+    saved_file_path = None
+    if file and file.filename:
+        # Sanitize filename and save to uploads/
+        ext = os.path.splitext(file.filename)[1]
+        unique_filename = f"{uuid.uuid4().hex[:10]}_{file.filename}"
+        disk_path = os.path.join(UPLOAD_DIR, unique_filename)
+        
+        with open(disk_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+        
+        saved_file_path = f"/uploads/{unique_filename}"
+
+    parsed_due_date = None
+    if due_date:
+        try:
+            parsed_due_date = datetime.strptime(due_date, "%Y-%m-%d").date()
+        except Exception:
+            pass
+
+    mat = AcademicMaterial(
+        title=title,
+        description=description,
+        subject_code=subject_code,
+        subject_name=subject_name,
+        uploaded_by_name=uploaded_by,
+        file_path=saved_file_path or (external_link if not external_link else None),
+        external_link=external_link,
+        material_type=material_type,
+        target_year=target_year,
+        semester_number=semester_number,
+        target_branch=target_branch,
+        target_section=target_section,
+        due_date=parsed_due_date,
+        upload_date=date.today()
+    )
+    db.add(mat)
+    db.commit()
+    db.refresh(mat)
+
+    return {
+        "message": "Study material and file uploaded successfully.",
+        "id": mat.id,
+        "file_path": mat.file_path,
+        "title": mat.title
+    }
+
+

@@ -29,6 +29,18 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 
+def get_optional_current_user(token: str = Depends(OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)), db: Session = Depends(get_db)) -> User | None:
+    if not token:
+        return None
+    payload = decode_access_token(token)
+    if not payload:
+        return None
+    username: str = payload.get("sub")
+    if username is None:
+        return None
+    return db.query(User).filter(User.username == username).first()
+
+
 def require_role(allowed_roles: list[UserRole]):
     def role_checker(current_user: User = Depends(get_current_user)):
         if current_user.role not in allowed_roles:
@@ -38,3 +50,4 @@ def require_role(allowed_roles: list[UserRole]):
             )
         return current_user
     return role_checker
+

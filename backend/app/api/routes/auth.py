@@ -77,6 +77,29 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             fac.designation = request.designation
             db.commit()
 
+    # Resolve full name & detailed account labels
+    full_name = user.username
+    account_label = user.role.value.title()
+    identifier = user.username
+
+    if user.role == UserRole.STUDENT:
+        st = db.query(Student).filter(Student.user_id == user.id).first()
+        if st:
+            full_name = st.full_name
+            identifier = st.enrollment_number
+            calc_year = (st.current_semester + 1) // 2
+            branch_short = "CSE" if "computer" in st.branch.lower() else st.branch
+            account_label = f"Student • {branch_short} (Year {calc_year})"
+    elif user.role == UserRole.FACULTY:
+        fac = db.query(Faculty).filter(Faculty.user_id == user.id).first()
+        if fac:
+            full_name = fac.full_name
+            identifier = fac.employee_id
+            account_label = f"{fac.designation or 'Faculty'} • {fac.department or 'Dept of CSE'}"
+    elif user.role == UserRole.ADMIN:
+        full_name = "System Administrator"
+        account_label = "System Administrator • Campus Head"
+
     access_token = create_access_token(subject=user.username, role=user.role.value)
     return {
         "access_token": access_token,
@@ -84,6 +107,9 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         "role": user.role.value,
         "username": user.username,
         "user_id": user.id,
+        "full_name": full_name,
+        "account_label": account_label,
+        "identifier": identifier,
     }
 
 
@@ -121,13 +147,17 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
 
+    resolved_full_name = request.full_name or assigned_username.title()
+    account_label = "Student Account"
+    identifier = assigned_username
+
     # Create Role-Specific Profile
     if request.role == UserRole.STUDENT:
         enrollment = request.enrollment_number or assigned_username
         student = Student(
             user_id=new_user.id,
             enrollment_number=enrollment,
-            full_name=request.full_name or assigned_username.title(),
+            full_name=resolved_full_name,
             email=request.email,
             branch=request.branch or "Computer Science & Engineering",
             current_semester=request.semester or 1,
@@ -137,17 +167,22 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
             backlogs=0
         )
         db.add(student)
+        identifier = enrollment
+        calc_year = ((request.semester or 1) + 1) // 2
+        account_label = f"Student • {request.branch or 'CSE'} (Year {calc_year})"
     elif request.role in [UserRole.FACULTY, UserRole.ADMIN]:
         emp_id = request.employee_id or assigned_username
         faculty = Faculty(
             user_id=new_user.id,
             employee_id=emp_id,
-            full_name=request.full_name or f"Dr. {assigned_username.title()}",
+            full_name=resolved_full_name,
             department=request.department or "Computer Science & Engineering",
             designation=request.designation or "Professor",
             email=request.email
         )
         db.add(faculty)
+        identifier = emp_id
+        account_label = f"{request.designation or 'Faculty'} • {request.department or 'Dept of CSE'}"
 
     db.commit()
 
@@ -159,9 +194,45 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
         "role": new_user.role.value,
         "username": new_user.username,
         "user_id": new_user.id,
+        "full_name": resolved_full_name,
+        "account_label": account_label,
+        "identifier": identifier,
     }
 
 
 @router.get("/me", response_model=UserResponse)
-def get_me(current_user: User = Depends(get_current_user)):
-    return current_user
+def get_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    full_name = current_user.username
+    account_label = current_user.role.value.title()
+    identifier = current_user.username
+
+    if current_user.role == UserRole.STUDENT:
+        st = db.query(Student).filter(Student.user_id == current_user.id).first()
+        if st:
+            full_name = st.full_name
+            identifier = st.enrollment_number
+            calc_year = (st.current_semester + 1) // 2
+            branch_short = "CSE" if "computer" in st.branch.lower() else st.branch
+            account_label = f"Student • {branch_short} (Year {calc_year})"
+    elif current_user.role == UserRole.FACULTY:
+        fac = db.query(Faculty).filter(Faculty.user_id == current_user.id).first()
+        if fac:
+            full_name = fac.full_name
+            identifier = fac.employee_id
+            account_label = f"{fac.designation or 'Faculty'} • {fac.department or 'Dept of CSE'}"
+    elif current_user.role == UserRole.ADMIN:
+        full_name = "System Administrator"
+        account_label = "System Administrator • Campus Head"
+
+    return UserResponse(
+        id=current_user.id,
+        username=current_user.username,
+        email=current_user.email,
+        role=current_user.role,
+        is_active=current_user.is_active,
+        full_name=full_name,
+        account_label=account_label,
+        identifier=identifier
+    )
+
+

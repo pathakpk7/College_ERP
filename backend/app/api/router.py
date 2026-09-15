@@ -3,7 +3,7 @@ from app.api.routes import (
     health, auth, students, dashboard, attendance,
     registration, noc, fees, marks, library, messaging,
     placement, forum, timetable, academic_materials,
-    faculty_portal, admin_portal
+    faculty_portal, admin_portal, bookstore
 )
 
 api_router = APIRouter()
@@ -24,3 +24,5 @@ api_router.include_router(timetable.router, prefix="/timetable", tags=["Timetabl
 api_router.include_router(academic_materials.router, prefix="/academic-materials", tags=["Academic Materials"])
 api_router.include_router(faculty_portal.router, prefix="/faculty-portal", tags=["Faculty Portal"])
 api_router.include_router(admin_portal.router, prefix="/admin-portal", tags=["Admin Portal"])
+api_router.include_router(bookstore.router, prefix="/bookstore", tags=["Campus Book Store"])
+

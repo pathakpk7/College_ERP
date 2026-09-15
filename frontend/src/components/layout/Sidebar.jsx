@@ -4,31 +4,38 @@ import {
   LayoutDashboard, CalendarCheck, FileCheck, FileText,
   CreditCard, Award, BookOpen, MessageSquare, Briefcase,
   MessagesSquare, Calendar, BookMarked, LogOut, GraduationCap,
-  CheckSquare, Edit3, Upload, Megaphone, ShieldCheck, Users, X
+  CheckSquare, Edit3, Upload, Megaphone, ShieldCheck, Users, X,
+  ShoppingBag
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { getUserInitials, getUserDisplayName, getUserAccountLabel, getUserIdentifier } from '../../utils/userUtils';
+
+
 
 const studentNavItems = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { name: 'Study Material & PYQs', path: '/materials', icon: BookMarked },
+  { name: 'Campus Book Store', path: '/bookstore', icon: ShoppingBag },
+  { name: 'Library Borrowings', path: '/library', icon: BookOpen },
   { name: 'Attendance', path: '/attendance', icon: CalendarCheck },
   { name: 'Registration Log', path: '/registration', icon: FileCheck },
   { name: 'NOC Application', path: '/noc', icon: FileText },
   { name: 'Fee Info', path: '/fees', icon: CreditCard },
   { name: 'Sessional Marks', path: '/marks', icon: Award },
-  { name: 'Library', path: '/library', icon: BookOpen },
   { name: 'SMS & Grievances', path: '/messages', icon: MessageSquare },
   { name: 'Placement', path: '/placement', icon: Briefcase },
   { name: 'Discussion Forum', path: '/forum', icon: MessagesSquare },
   { name: 'Timetable', path: '/timetable', icon: Calendar },
-  { name: 'Notes & Assignments', path: '/materials', icon: BookMarked },
 ];
 
 const facultyNavItems = [
   { name: 'Faculty Dashboard', path: '/faculty/dashboard', icon: LayoutDashboard },
+  { name: 'Upload Notes & PYQs', path: '/faculty/materials', icon: Upload },
+  { name: 'Study Materials Hub', path: '/materials', icon: BookMarked },
+  { name: 'Campus Book Store', path: '/bookstore', icon: ShoppingBag },
   { name: 'Class Traversal Workspace', path: '/faculty/classes', icon: Users },
   { name: 'Mark Attendance', path: '/faculty/attendance', icon: CheckSquare },
   { name: 'Enter Sessional Marks', path: '/faculty/marks', icon: Edit3 },
-  { name: 'Upload Notes & Materials', path: '/faculty/materials', icon: Upload },
   { name: 'Class Timetable', path: '/timetable', icon: Calendar },
   { name: 'Discussion Forum', path: '/forum', icon: MessagesSquare },
   { name: 'Messages & Grievances', path: '/messages', icon: MessageSquare },
@@ -36,12 +43,15 @@ const facultyNavItems = [
 
 const adminNavItems = [
   { name: 'Admin Dashboard', path: '/admin/dashboard', icon: ShieldCheck },
+  { name: 'Campus Book Store', path: '/bookstore', icon: ShoppingBag },
+  { name: 'Study Materials Hub', path: '/materials', icon: BookMarked },
   { name: 'Review NOC Applications', path: '/admin/noc-review', icon: FileText },
   { name: 'Publish Official Notice', path: '/admin/notices', icon: Megaphone },
   { name: 'Publish Placement Drive', path: '/admin/placements', icon: Briefcase },
   { name: 'Messages & Grievances', path: '/messages', icon: MessageSquare },
   { name: 'Discussion Forum', path: '/forum', icon: MessagesSquare },
 ];
+
 
 export default function Sidebar({ isMobileOpen = false, onCloseMobile = () => {} }) {
   const { logout, user } = useAuth();
@@ -108,11 +118,23 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile = () => {}
       {/* User Footer & Logout */}
       <div className="p-4 border-t border-slate-800 bg-slate-950/60">
         <div className="flex items-center justify-between">
-          <div className="truncate">
-            <p className="text-xs font-bold text-white truncate">{user?.username || 'User'}</p>
-            <span className="inline-block px-1.5 py-0.5 text-[10px] font-mono bg-indigo-900/60 text-indigo-300 rounded border border-indigo-700/50">
-              {role}
-            </span>
+          <div className="flex items-center space-x-2.5 truncate">
+            <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm uppercase">
+              {getUserInitials(user)}
+            </div>
+            <div className="truncate">
+              <p className="text-xs font-bold text-white truncate" title={getUserDisplayName(user)}>
+                {getUserDisplayName(user)}
+              </p>
+              <div className="flex items-center space-x-1 mt-0.5">
+                <span
+                  className="inline-block px-1.5 py-0.2 text-[9px] font-medium bg-indigo-950/80 text-indigo-300 rounded border border-indigo-700/50 truncate max-w-[130px]"
+                  title={getUserAccountLabel(user)}
+                >
+                  {getUserAccountLabel(user)}
+                </span>
+              </div>
+            </div>
           </div>
           <button
             onClick={() => {
@@ -120,7 +142,7 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile = () => {}
               logout();
             }}
             title="Logout"
-            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition"
+            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition shrink-0 ml-1"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -128,6 +150,8 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile = () => {}
       </div>
     </div>
   );
+
+
 
   return (
     <>

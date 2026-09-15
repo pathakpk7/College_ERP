@@ -58,13 +58,19 @@ export default function Timetable() {
                           </span>
                         </div>
                         <div>
-                          <span className="inline-block px-1.5 py-0.2 bg-slate-100 text-indigo-700 font-mono font-extrabold text-[10px] rounded mr-1.5">
-                            {s.subject_code}
-                          </span>
-                          <span className="font-bold text-slate-900 leading-tight">{s.subject_name}</span>
+                          <div className="flex items-center space-x-1.5 mb-1">
+                            <span className="inline-block px-1.5 py-0.5 bg-indigo-50 text-indigo-700 font-mono font-black text-[10px] rounded border border-indigo-200">
+                              {s.subject_code || 'CS701'}
+                            </span>
+                            <span className="inline-block px-1.5 py-0.5 bg-slate-100 text-slate-700 font-bold text-[9px] rounded">
+                              Sem {s.semester} &bull; Sec {s.section}
+                            </span>
+                          </div>
+                          <p className="font-bold text-slate-900 leading-tight">{s.subject_name}</p>
+                          <p className="text-[10px] text-slate-400 font-medium">{s.branch}</p>
                         </div>
                         <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100">
-                          <span className="truncate">{s.faculty_name}</span>
+                          <span className="truncate font-semibold">{s.faculty_name}</span>
                           <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded font-bold text-slate-700">{s.room_number}</span>
                         </div>
                       </div>

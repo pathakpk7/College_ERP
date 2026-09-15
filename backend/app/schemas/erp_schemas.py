@@ -3,7 +3,8 @@ from typing import List, Optional
 from datetime import date, datetime
 from app.utils.enums import (
     UserRole, AttendanceStatus, NocStatus, AssessmentType,
-    FeeStatus, LibraryStatus, GrievanceStatus, MaterialType
+    FeeStatus, LibraryStatus, GrievanceStatus, MaterialType,
+    BookCategory, BookOrderType, BookOrderStatus
 )
 
 
@@ -14,22 +15,23 @@ class StudentProfileResponse(BaseModel):
     enrollment_number: str
     full_name: str
     email: str
-    phone: Optional[str]
+    phone: Optional[str] = None
     branch: str
     current_semester: int
     admission_year: int
     section: str
-    date_of_birth: Optional[date]
-    cgpa: float
-    backlogs: int
-    skills: Optional[str]
-    resume_link: Optional[str]
-    github_link: Optional[str]
-    linkedin_link: Optional[str]
-    preferred_roles: Optional[str]
+    date_of_birth: Optional[date] = None
+    cgpa: float = 0.0
+    backlogs: int = 0
+    skills: Optional[str] = None
+    resume_link: Optional[str] = None
+    github_link: Optional[str] = None
+    linkedin_link: Optional[str] = None
+    preferred_roles: Optional[str] = None
 
     class Config:
         from_attributes = True
+
 
 
 class NoticeResponse(BaseModel):
@@ -271,14 +273,82 @@ class TimetableSlotResponse(BaseModel):
 class AcademicMaterialResponse(BaseModel):
     id: int
     title: str
-    description: Optional[str]
+    description: Optional[str] = None
     subject_code: str
     subject_name: str
     uploaded_by_name: str
-    file_path: str
+    file_path: Optional[str] = None
+    external_link: Optional[str] = None
     material_type: MaterialType
-    due_date: Optional[date]
+    target_year: Optional[int] = None
+    semester_number: Optional[int] = None
+    target_branch: Optional[str] = None
+    target_section: Optional[str] = None
+    due_date: Optional[date] = None
     upload_date: date
 
     class Config:
         from_attributes = True
+
+
+# Bookstore Schemas
+class StoreBookResponse(BaseModel):
+    id: int
+    title: str
+    author: str
+    category: BookCategory
+    price: float
+    borrow_fee: float = 50.0
+    rating: float
+    cover_image: Optional[str] = None
+    description: Optional[str] = None
+    publisher: Optional[str] = None
+    edition: Optional[str] = None
+    stock_quantity: int
+    is_available: bool
+    expected_restock_date: Optional[date] = None
+
+    class Config:
+        from_attributes = True
+
+
+class StoreBookCreateRequest(BaseModel):
+    title: str
+    author: str
+    category: BookCategory = BookCategory.COMPUTER_SCIENCE
+    price: float = 0.0
+    borrow_fee: float = 50.0
+    rating: float = 4.5
+    cover_image: Optional[str] = None
+    description: Optional[str] = None
+    publisher: Optional[str] = None
+    edition: Optional[str] = "Latest Edition"
+    stock_quantity: int = 10
+    expected_restock_date: Optional[date] = None
+
+
+
+class StoreOrderRequest(BaseModel):
+    book_id: int
+    order_type: BookOrderType = BookOrderType.BORROW
+    remarks: Optional[str] = None
+
+
+class StoreOrderResponse(BaseModel):
+    id: int
+    student_id: int
+    book_id: int
+    book_title: str
+    book_author: str
+    cover_image: Optional[str] = None
+    order_type: BookOrderType
+    order_date: date
+    due_date: Optional[date] = None
+    price_paid: float
+    status: BookOrderStatus
+    remarks: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+

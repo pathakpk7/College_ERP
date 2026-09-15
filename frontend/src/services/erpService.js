@@ -33,15 +33,26 @@ export const createForumPost = (data) => api.post('/forum', data).then(res => re
 
 export const getTimetable = () => api.get('/timetable').then(res => res.data);
 
-export const getAcademicMaterials = () => api.get('/academic-materials').then(res => res.data);
+export const getAcademicMaterials = (params = {}) => api.get('/academic-materials', { params }).then(res => res.data);
+
+// Campus Book Store & E-Library Services
+export const getBookStoreCatalog = (params = {}) => api.get('/bookstore/books', { params }).then(res => res.data);
+export const getBookDetail = (bookId) => api.get(`/bookstore/books/${bookId}`).then(res => res.data);
+export const placeBookOrder = (data) => api.post('/bookstore/orders', data).then(res => res.data);
+export const getMyBookOrders = () => api.get('/bookstore/orders/my-orders').then(res => res.data);
+
 
 // Faculty Portal Services
 export const getFacultyDashboard = () => api.get('/faculty-portal/dashboard').then(res => res.data);
+export const getFacultyClasses = () => api.get('/faculty-portal/classes').then(res => res.data);
 export const getEnrolledStudents = (params) => api.get('/faculty-portal/students', { params }).then(res => res.data);
 export const markStudentAttendance = (data) => api.post('/faculty-portal/attendance', data).then(res => res.data);
 export const submitStudentMarks = (data) => api.post('/faculty-portal/marks', data).then(res => res.data);
 export const submitBulkStudentMarks = (data) => api.post('/faculty-portal/marks/bulk', data).then(res => res.data);
 export const uploadStudyMaterial = (data) => api.post('/faculty-portal/materials', data).then(res => res.data);
+export const uploadMaterialFile = (formData) => api.post('/faculty-portal/materials/upload-file', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+}).then(res => res.data);
 
 // Admin Portal & Notices Services
 export const getAdminDashboard = () => api.get('/admin-portal/dashboard').then(res => res.data);

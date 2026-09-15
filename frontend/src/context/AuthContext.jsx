@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
-import { login as apiLogin, register as apiRegister, logout as apiLogout, getStoredUser } from '../services/authService';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { login as apiLogin, register as apiRegister, logout as apiLogout, getStoredUser, getCurrentUser } from '../services/authService';
 
 const AuthContext = createContext(null);
 
@@ -7,6 +7,26 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(getStoredUser());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      getCurrentUser()
+        .then((userData) => {
+          if (userData && userData.full_name) {
+            setUser((prev) => {
+              const updated = { ...prev, ...userData };
+              localStorage.setItem('user', JSON.stringify(updated));
+              return updated;
+            });
+          }
+        })
+        .catch(() => {
+          // Token might be invalid or expired; leave as is or let API interceptor handle 401
+        });
+    }
+  }, []);
+
 
   const login = async (identifier, password, captcha_id, captcha_solution, designation = null) => {
     setLoading(true);

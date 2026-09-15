@@ -19,7 +19,14 @@ export default function Library() {
 
   return (
     <PageContainer>
-      <Card title="Library Transactions & Fine Details" icon={BookOpen} subtitle="Book borrowings, return dates & per-day late fine calculation">
+      <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between text-xs text-amber-900 font-medium">
+        <div className="flex items-center space-x-2">
+          <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+          <span><b>Library Borrowing Policy:</b> 1-Month (30 Days) return limit. Overdue late fee accrues at <b>₹ 20.00 / day</b> after the due date.</span>
+        </div>
+      </div>
+
+      <Card title="Library Transactions & Fine Details" icon={BookOpen} subtitle="Book borrowings, 30-day return dates & ₹20/day overdue fine calculations">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">

@@ -4,14 +4,17 @@ from app.db.database import Base, engine, SessionLocal
 from app.core.security import get_password_hash
 from app.utils.enums import (
     UserRole, AttendanceStatus, NocStatus, AssessmentType,
-    FeeStatus, LibraryStatus, GrievanceStatus, MaterialType
+    FeeStatus, LibraryStatus, GrievanceStatus, MaterialType,
+    BookCategory, BookOrderType, BookOrderStatus
 )
 from app.models.all_models import (
     User, Student, Faculty, Semester, Subject, Enrollment,
     Attendance, Registration, NocApplication, Fee, Mark,
     LibraryRecord, Message, PlacementDrive, ForumPost,
-    ForumComment, TimetableSlot, AcademicMaterial, Notice
+    ForumComment, TimetableSlot, AcademicMaterial, Notice,
+    StoreBook, StoreOrder
 )
+
 
 
 def init_db():
@@ -48,27 +51,55 @@ def init_db():
         db.refresh(faculty_user)
         db.refresh(admin_user)
 
-        # 2. Student Profile (Semester 7 for NOC eligibility)
-        student_profile = Student(
-            user_id=student_user.id,
-            enrollment_number="2022CSE0101",
-            full_name="Alex Johnson",
-            email="alex.student@college.edu",
-            phone="+1 555-0192",
-            branch="Computer Science & Engineering",
-            current_semester=7,
-            admission_year=2022,
-            section="A",
-            date_of_birth=date(2003, 5, 14),
-            cgpa=8.65,
-            backlogs=0,
-            skills="React, Python, FastAPI, PostgreSQL, Tailwind CSS, Docker",
-            resume_link="https://drive.google.com/file/d/sample-resume",
-            github_link="https://github.com/alex-johnson-dev",
-            linkedin_link="https://linkedin.in/in/alex-johnson-dev",
-            preferred_roles="Full Stack Engineer, Backend Developer, Data Engineer"
-        )
-        db.add(student_profile)
+        # 2. Student Profiles across Sections (CSE-A, CSE-B, IT-A)
+        s_users = []
+        students_meta = [
+            ("student", "alex.student@college.edu", "Alex Johnson", "2022CSE0101", "Computer Science & Engineering", 7, "A", 8.65, 0),
+            ("priya_s", "priya.sharma@college.edu", "Priya Sharma", "2022CSE0102", "Computer Science & Engineering", 7, "A", 8.92, 0),
+            ("rahul_v", "rahul.verma@college.edu", "Rahul Verma", "2022CSE0103", "Computer Science & Engineering", 7, "A", 7.85, 0),
+            ("ananya_g", "ananya.gupta@college.edu", "Ananya Gupta", "2022CSE0104", "Computer Science & Engineering", 7, "A", 9.15, 0),
+            ("rohan_m", "rohan.mehta@college.edu", "Rohan Mehta", "2022CSE0105", "Computer Science & Engineering", 7, "A", 8.10, 0),
+            ("vikram_s", "vikram.singh@college.edu", "Vikramaditya Singh", "2022CSE0201", "Computer Science & Engineering", 7, "B", 8.40, 0),
+            ("sneha_r", "sneha.rao@college.edu", "Sneha Rao", "2022CSE0202", "Computer Science & Engineering", 7, "B", 8.75, 0),
+            ("kunal_k", "kunal.kapoor@college.edu", "Kunal Kapoor", "2022CSE0203", "Computer Science & Engineering", 7, "B", 7.90, 1),
+            ("tanvi_r", "tanvi.roy@college.edu", "Tanvi Roy", "2022CSE0204", "Computer Science & Engineering", 7, "B", 8.50, 0),
+            ("aditya_n", "aditya.nair@college.edu", "Aditya Nair", "2023IT0101", "Information Technology", 6, "A", 8.35, 0),
+            ("meera_j", "meera.joshi@college.edu", "Meera Joshi", "2023IT0102", "Information Technology", 6, "A", 8.80, 0),
+        ]
+
+        created_students = []
+        for uname, uemail, fname, enr, br, sem, sec, cg, bl in students_meta:
+            if uname == "student":
+                u = student_user
+            else:
+                u = User(username=uname, email=uemail, password_hash=get_password_hash("password123"), role=UserRole.STUDENT)
+                db.add(u)
+                db.commit()
+                db.refresh(u)
+            
+            sp = Student(
+                user_id=u.id,
+                enrollment_number=enr,
+                full_name=fname,
+                email=uemail,
+                phone="+91 98765 43210",
+                branch=br,
+                current_semester=sem,
+                admission_year=2022 if sem == 7 else 2023,
+                section=sec,
+                date_of_birth=date(2003, 5, 14),
+                cgpa=cg,
+                backlogs=bl,
+                skills="React, Python, FastAPI, PostgreSQL, Tailwind CSS, Docker",
+                resume_link="https://drive.google.com/file/d/sample-resume",
+                github_link=f"https://github.com/{uname}-dev",
+                linkedin_link=f"https://linkedin.com/in/{uname}-dev",
+                preferred_roles="Full Stack Engineer, Backend Developer, Data Engineer"
+            )
+            db.add(sp)
+            created_students.append(sp)
+
+        student_profile = created_students[0]
 
         # 3. Faculty Profile
         faculty_profile = Faculty(
@@ -78,13 +109,13 @@ def init_db():
             department="Computer Science & Engineering",
             designation="Professor & HOD",
             email="dr.smith@college.edu",
-            phone="+1 555-8832"
+            phone="+91 98111 22334"
         )
         db.add(faculty_profile)
         db.commit()
-        db.refresh(student_profile)
+        for s_obj in created_students:
+            db.refresh(s_obj)
 
-        # 4. Semesters
         # 4. Semesters (Current Sem 7, Previous Sem 1 to 6)
         sem7 = Semester(semester_number=7, academic_year="2025-2026", start_date=date(2025, 8, 1), end_date=date(2025, 12, 20), is_current=True)
         sem6 = Semester(semester_number=6, academic_year="2024-2025", start_date=date(2025, 1, 10), end_date=date(2025, 5, 25), is_current=False)
@@ -322,10 +353,87 @@ def init_db():
                     room_number=room
                 ))
 
-        # 17. Academic Materials
+        # 17. Academic Materials (Year-wide, Section-specific, PYQs, Links, Contest Prep)
         db.add_all([
-            AcademicMaterial(title="Distributed Systems Lecture Notes 1-5", description="Covers RPC, Raft Consensus, and Paxos Overview", subject_code="CS701", subject_name="Distributed Systems", uploaded_by_name="Dr. Robert Smith", file_path="/uploads/cs701_lecture_1_5.pdf", material_type=MaterialType.NOTE, upload_date=date(2025, 8, 12)),
-            AcademicMaterial(title="Machine Learning Assignment 1 — Regression & Classification", description="Implement Gradient Descent from scratch in Python", subject_code="CS702", subject_name="Machine Learning", uploaded_by_name="Dr. Emily Davis", file_path="/uploads/cs702_assignment1.pdf", material_type=MaterialType.ASSIGNMENT, due_date=date(2025, 9, 25), upload_date=date(2025, 9, 1))
+            AcademicMaterial(
+                title="Distributed Systems Lecture Notes 1-5",
+                description="Covers RPC, Raft Consensus, and Paxos Overview with architectural diagrams.",
+                subject_code="CS701",
+                subject_name="Distributed Systems",
+                uploaded_by_name="Dr. Robert Smith",
+                file_path="/uploads/cs701_lecture_1_5.pdf",
+                material_type=MaterialType.NOTE,
+                target_year=4,
+                target_branch="Computer Science & Engineering",
+                target_section="A",
+                upload_date=date(2025, 8, 12)
+            ),
+            AcademicMaterial(
+                title="Machine Learning Assignment 1 — Regression & Classification",
+                description="Implement Gradient Descent from scratch in Python with NumPy.",
+                subject_code="CS702",
+                subject_name="Machine Learning",
+                uploaded_by_name="Dr. Emily Davis",
+                file_path="/uploads/cs702_assignment1.pdf",
+                material_type=MaterialType.ASSIGNMENT,
+                target_year=4,
+                target_branch="Computer Science & Engineering",
+                target_section=None,  # Whole Year
+                due_date=date(2025, 9, 25),
+                upload_date=date(2025, 9, 1)
+            ),
+            AcademicMaterial(
+                title="CS701 Distributed Systems — Previous 5-Year Question Papers (PYQ Bundle)",
+                description="University End-Semester examination papers (2020-2024) with answer keys.",
+                subject_code="CS701",
+                subject_name="Distributed Systems",
+                uploaded_by_name="Dr. Robert Smith",
+                file_path="/uploads/cs701_pyq_bundle.pdf",
+                material_type=MaterialType.PYQ,
+                target_year=4,
+                target_branch="Computer Science & Engineering",
+                target_section=None,
+                upload_date=date(2025, 8, 20)
+            ),
+            AcademicMaterial(
+                title="Google ICPC & Codeforces Top 150 DP Practice Sheet",
+                description="Curated problem list for Dynamic Programming, Trees & Graphs with editorial links.",
+                subject_code="CS705",
+                subject_name="Competitive Programming & Algorithms",
+                uploaded_by_name="Prof. Alan Turing",
+                external_link="https://github.com/topics/competitive-programming",
+                material_type=MaterialType.CONTEST_PREP,
+                target_year=4,
+                target_branch="Computer Science & Engineering",
+                target_section=None,
+                upload_date=date(2025, 9, 5)
+            ),
+            AcademicMaterial(
+                title="MIT 6.824 Distributed Systems Lab Reference & Go Setup",
+                description="Official Go framework, test harnesses, and video playlist for distributed consensus labs.",
+                subject_code="CS701",
+                subject_name="Distributed Systems",
+                uploaded_by_name="Dr. Robert Smith",
+                external_link="https://pdos.csail.mit.edu/6.824/",
+                material_type=MaterialType.REFERENCE_LINK,
+                target_year=4,
+                target_branch="Computer Science & Engineering",
+                target_section="A",
+                upload_date=date(2025, 8, 15)
+            ),
+            AcademicMaterial(
+                title="Announcement: CodeSprint Annual Hackathon Guidelines & Starter Kit",
+                description="Team formation rules, hackathon themes (AI, Web3, FinTech), and starter templates.",
+                subject_code="GEN701",
+                subject_name="Campus Coding Guild",
+                uploaded_by_name="Dr. Robert Smith",
+                external_link="https://github.com",
+                material_type=MaterialType.ANNOUNCEMENT,
+                target_year=4,
+                target_branch="Computer Science & Engineering",
+                target_section=None,
+                upload_date=date(2025, 9, 8)
+            )
         ])
 
         # 18. Official Notices
@@ -335,8 +443,13 @@ def init_db():
             Notice(title="Google Placement Drive Announcement", content="Registration link for Google India SDE campus placement drive is now active.", category="PLACEMENT", posted_by="Placement Cell", posted_date=date(2025, 9, 3))
         ])
 
+        # 19. Literary Haven Campus Book Store Seed Inventory (INR ₹)
+        from app.api.routes.bookstore import INITIAL_BOOKS
+        for b_data in INITIAL_BOOKS:
+            db.add(StoreBook(**b_data))
+
         db.commit()
-        print("Successfully seeded database!")
+        print("Successfully seeded database with full student cohort, timetables, and bookstore inventory!")
 
     except Exception as e:
         db.rollback()

@@ -16,6 +16,8 @@ import Placement from './pages/Placement';
 import DiscussionForum from './pages/DiscussionForum';
 import Timetable from './pages/Timetable';
 import NotesAssignments from './pages/NotesAssignments';
+import CampusBookStore from './pages/CampusBookStore';
+
 
 // Faculty Pages
 import FacultyDashboard from './pages/FacultyDashboard';
@@ -102,7 +104,9 @@ export default function App() {
             <Route path="messages" element={<Sms />} />
             <Route path="forum" element={<DiscussionForum />} />
             <Route path="timetable" element={<Timetable />} />
+            <Route path="bookstore" element={<CampusBookStore />} />
           </Route>
+
 
           {/* Fallback 404 Route */}
           <Route path="*" element={<NotFound />} />

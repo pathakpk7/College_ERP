@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, Search, X, Calendar, Megaphone, FileText, CheckCircle2, ChevronRight, User, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getNotices } from '../../services/erpService';
+import { getUserInitials, getUserDisplayName, getUserAccountLabel, getUserIdentifier } from '../../utils/userUtils';
+
+
 
 const systemNavigationLinks = [
   { name: 'Student Dashboard', path: '/dashboard', category: 'General', role: 'STUDENT' },
@@ -244,16 +247,25 @@ export default function Topbar({ title = 'Dashboard', onToggleMobileMenu }) {
         </div>
 
         {/* User Profile Chip */}
-        <div className="flex items-center space-x-2 border-l border-slate-200 pl-3">
-          <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-            {user?.username ? user.username[0].toUpperCase() : 'U'}
+        <div
+          className="flex items-center space-x-2.5 border-l border-slate-200 pl-3 cursor-default"
+          title={getUserIdentifier(user) ? `ID / Roll No: ${getUserIdentifier(user)}` : ''}
+        >
+          <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-sm uppercase">
+            {getUserInitials(user)}
           </div>
           <div className="hidden md:block">
-            <p className="text-xs font-semibold text-slate-900 leading-tight">{user?.username}</p>
-            <p className="text-[10px] text-indigo-600 font-bold uppercase">{user?.role}</p>
+            <p className="text-xs font-bold text-slate-900 leading-tight">
+              {getUserDisplayName(user)}
+            </p>
+            <p className="text-[10px] text-indigo-600 font-bold tracking-tight">
+              {getUserAccountLabel(user)}
+            </p>
           </div>
         </div>
       </div>
+
+
 
       {/* Notice Detail Modal */}
       {selectedNotice && (

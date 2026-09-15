@@ -10,7 +10,8 @@ from app.utils.enums import LibraryStatus
 
 router = APIRouter()
 
-PER_DAY_FINE_RATE = 5.0  # ₹ 5.00 per late day
+PER_DAY_FINE_RATE = 20.0  # ₹ 20.00 per late day
+
 
 
 @router.get("", response_model=List[LibraryRecordResponse])

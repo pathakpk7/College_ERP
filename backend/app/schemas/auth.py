@@ -14,6 +14,11 @@ class Token(BaseModel):
     role: str
     username: str
     user_id: int
+    full_name: Optional[str] = None
+    account_label: Optional[str] = None
+    identifier: Optional[str] = None
+
+
 
 
 class TokenData(BaseModel):
@@ -58,6 +63,11 @@ class UserResponse(BaseModel):
     email: str
     role: UserRole
     is_active: bool
+    full_name: Optional[str] = None
+    account_label: Optional[str] = None
+    identifier: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+

@@ -49,3 +49,30 @@ class GrievanceStatus(str, enum.Enum):
 class MaterialType(str, enum.Enum):
     NOTE = "NOTE"
     ASSIGNMENT = "ASSIGNMENT"
+    PYQ = "PYQ"
+    REFERENCE_LINK = "REFERENCE_LINK"
+    CONTEST_PREP = "CONTEST_PREP"
+    ANNOUNCEMENT = "ANNOUNCEMENT"
+
+
+class BookCategory(str, enum.Enum):
+    ENGINEERING = "ENGINEERING"
+    COMPUTER_SCIENCE = "COMPUTER_SCIENCE"
+    ELECTRONICS = "ELECTRONICS"
+    MATHEMATICS = "MATHEMATICS"
+    LITERATURE = "LITERATURE"
+    COMPETITIVE_EXAM = "COMPETITIVE_EXAM"
+
+
+class BookOrderType(str, enum.Enum):
+    BORROW = "BORROW"
+    BUY = "BUY"
+
+
+class BookOrderStatus(str, enum.Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    DELIVERED = "DELIVERED"
+    RETURNED = "RETURNED"
+    CANCELLED = "CANCELLED"
+
