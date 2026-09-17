@@ -31,17 +31,36 @@ export default function AppLayout() {
   const location = useLocation();
   const title = titleMap[location.pathname] || 'College ERP System';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true);
 
   // Close mobile drawer on route navigation
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
+  const handleToggleSidebar = () => {
+    // If screen is mobile/tablet (< 1024px), toggle mobileMenuOpen
+    if (window.innerWidth < 1024) {
+      setMobileMenuOpen((prev) => !prev);
+    } else {
+      setDesktopSidebarOpen((prev) => !prev);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800">
-      <Sidebar isMobileOpen={mobileMenuOpen} onCloseMobile={() => setMobileMenuOpen(false)} />
+      <Sidebar
+        isMobileOpen={mobileMenuOpen}
+        onCloseMobile={() => setMobileMenuOpen(false)}
+        isDesktopOpen={desktopSidebarOpen}
+        onToggleDesktop={() => setDesktopSidebarOpen((prev) => !prev)}
+      />
       <div className="flex-1 flex flex-col min-w-0">
-        <Topbar title={title} onToggleMobileMenu={() => setMobileMenuOpen((prev) => !prev)} />
+        <Topbar
+          title={title}
+          onToggleMobileMenu={handleToggleSidebar}
+          isDesktopSidebarOpen={desktopSidebarOpen}
+        />
         <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>

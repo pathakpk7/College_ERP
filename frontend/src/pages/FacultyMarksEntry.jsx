@@ -375,7 +375,7 @@ export default function FacultyMarksEntry() {
                         </td>
                         <td className="py-3 px-4">
                           <p className="font-bold text-slate-900">{student.full_name}</p>
-                          <p className="text-[10px] text-slate-400 font-normal">{student.email}</p>
+                          <p className="text-[10px] text-indigo-600 font-mono font-bold">{student.college_id || student.enrollment_number}</p>
                         </td>
                         <td className="py-3 px-4 text-slate-600">
                           <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold">

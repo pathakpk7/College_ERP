@@ -4,6 +4,7 @@ import { Bell, Search, X, Calendar, Megaphone, FileText, CheckCircle2, ChevronRi
 import { useAuth } from '../../context/AuthContext';
 import { getNotices } from '../../services/erpService';
 import { getUserInitials, getUserDisplayName, getUserAccountLabel, getUserIdentifier } from '../../utils/userUtils';
+import ProfileModal from '../common/ProfileModal';
 
 
 
@@ -48,6 +49,9 @@ export default function Topbar({ title = 'Dashboard', onToggleMobileMenu }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState(null);
   const notifRef = useRef(null);
+
+  // Profile Modal state
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     // Fetch notices for notifications
@@ -106,11 +110,12 @@ export default function Topbar({ title = 'Dashboard', onToggleMobileMenu }) {
   return (
     <header className="h-16 bg-white border-b border-slate-200/80 px-3 sm:px-8 flex items-center justify-between sticky top-0 z-30 shadow-xs">
       <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-        {/* Hamburger Menu Toggle for Mobile & Tablet */}
+        {/* Hamburger Menu Toggle for Both Desktop and Mobile/Tablet */}
         <button
           onClick={onToggleMobileMenu}
-          aria-label="Open Navigation Menu"
-          className="p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition lg:hidden shrink-0"
+          aria-label="Toggle Navigation Sidebar"
+          title="Toggle Sidebar"
+          className="p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition shrink-0"
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -246,26 +251,32 @@ export default function Topbar({ title = 'Dashboard', onToggleMobileMenu }) {
           )}
         </div>
 
-        {/* User Profile Chip */}
-        <div
-          className="flex items-center space-x-2.5 border-l border-slate-200 pl-3 cursor-default"
-          title={getUserIdentifier(user) ? `ID / Roll No: ${getUserIdentifier(user)}` : ''}
+        {/* User Profile Chip - Clickable to open Profile Data Modal */}
+        <button
+          onClick={() => setProfileOpen(true)}
+          className="flex items-center space-x-2.5 border-l border-slate-200 pl-3 p-1 rounded-xl hover:bg-slate-100 transition text-left cursor-pointer group"
+          title="Click to view personal profile details (Name, College ID, Roll No, Branch, Semester, etc.)"
         >
-          <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shadow-sm uppercase">
+          <div className="w-8 h-8 rounded-xl bg-indigo-600 group-hover:bg-indigo-700 text-white flex items-center justify-center font-black text-xs shadow-sm uppercase transition ring-2 ring-transparent group-hover:ring-indigo-300">
             {getUserInitials(user)}
           </div>
           <div className="hidden md:block">
-            <p className="text-xs font-bold text-slate-900 leading-tight">
+            <p className="text-xs font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition">
               {getUserDisplayName(user)}
             </p>
             <p className="text-[10px] text-indigo-600 font-bold tracking-tight">
               {getUserAccountLabel(user)}
             </p>
           </div>
-        </div>
+        </button>
       </div>
 
-
+      {/* User Personal Profile Details Modal */}
+      <ProfileModal
+        isOpen={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        user={user}
+      />
 
       {/* Notice Detail Modal */}
       {selectedNotice && (

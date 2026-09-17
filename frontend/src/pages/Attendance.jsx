@@ -422,92 +422,142 @@ export default function Attendance() {
 
       {/* TAB 3: PREVIOUS SEMESTERS HISTORY */}
       {activeTab === 'HISTORY_TAB' && (
-        <Card title="Registered Semester History Repository" icon={History} subtitle="Select any previous semester to view archived attendance logs & subject summary metrics">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-            {semestersList.map((sem) => {
-              const isSelected = selectedSemester === sem.semester_number;
-              return (
-                <div
-                  key={sem.semester_number}
-                  onClick={() => handleSemesterChange(sem.semester_number)}
-                  className={`p-4 rounded-2xl border cursor-pointer transition shadow-xs hover:shadow-md ${
-                    isSelected
-                      ? 'bg-indigo-900 text-white border-indigo-600 ring-2 ring-indigo-500'
-                      : 'bg-white text-slate-900 border-slate-200 hover:border-indigo-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Layers className={`w-4 h-4 ${isSelected ? 'text-indigo-300' : 'text-indigo-600'}`} />
-                      <span className="font-extrabold text-sm">Semester {sem.semester_number}</span>
-                    </div>
-                    {sem.is_current ? (
-                      <span className="px-2 py-0.5 bg-emerald-500 text-white text-[10px] font-bold rounded-full">
-                        ACTIVE
-                      </span>
-                    ) : (
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${isSelected ? 'bg-indigo-800 text-indigo-200' : 'bg-slate-100 text-slate-600'}`}>
-                        {sem.academic_year}
-                      </span>
-                    )}
-                  </div>
+        <Card
+          title="Previous Semester Attendance History"
+          icon={History}
+          subtitle="Select any semester to review historical subject attendance, total lectures conducted, and attendance percentages"
+        >
+          {/* Semester Selector Dropdown */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-slate-50 border border-slate-200 rounded-2xl mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-indigo-50 border border-indigo-200 rounded-xl">
+                <Layers className="w-5 h-5 text-indigo-600" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Select Academic Semester</label>
+                <p className="text-[11px] text-slate-500">Switch between semesters to load archived subject records</p>
+              </div>
+            </div>
 
-                  <div className="mt-3 pt-3 border-t border-slate-200/40 grid grid-cols-3 text-center text-xs">
-                    <div>
-                      <p className={`text-[10px] uppercase font-semibold ${isSelected ? 'text-indigo-200' : 'text-slate-400'}`}>Overall %</p>
-                      <p className="font-extrabold text-sm mt-0.5">{sem.overall_percentage}%</p>
-                    </div>
-                    <div>
-                      <p className={`text-[10px] uppercase font-semibold ${isSelected ? 'text-indigo-200' : 'text-slate-400'}`}>Conducted</p>
-                      <p className="font-extrabold text-sm mt-0.5">{sem.total_classes}</p>
-                    </div>
-                    <div>
-                      <p className={`text-[10px] uppercase font-semibold ${isSelected ? 'text-indigo-200' : 'text-slate-400'}`}>Attended</p>
-                      <p className="font-extrabold text-sm mt-0.5 text-emerald-400">{sem.present_classes}</p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            <div className="flex items-center space-x-2">
+              <select
+                value={selectedSemester || ''}
+                onChange={(e) => handleSemesterChange(parseInt(e.target.value))}
+                className="px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-black text-indigo-900 shadow-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              >
+                {semestersList.map((sem) => (
+                  <option key={sem.semester_number} value={sem.semester_number}>
+                    Semester {sem.semester_number} {sem.is_current ? '(Current Session)' : `(${sem.academic_year})`}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-extrabold text-xs text-slate-800">
-                Selected History View: Semester {selectedSemester} Summary
-              </h3>
+          {/* Subject Attendance Table for the Selected Semester */}
+          <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-white mb-6">
+            <div className="bg-[#003366] text-white px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <BookOpen className="w-4 h-4 text-indigo-200" />
+                <span className="font-extrabold text-xs tracking-wide">
+                  Semester {selectedSemester} &mdash; Subject-Wise Attendance Breakdown
+                </span>
+              </div>
               <button
                 onClick={() => setActiveTab('DAILY_DETAILS')}
-                className="text-xs font-bold text-indigo-600 hover:underline"
+                className="text-[11px] font-bold text-indigo-200 hover:text-white underline"
               >
-                Inspect Full Daily P1-P10 Grid &rarr;
+                View Daily P1-P10 Grid &rarr;
               </button>
             </div>
-            <div className="overflow-x-auto border border-slate-200 rounded-xl bg-white">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-slate-100 text-slate-700 font-extrabold border-b border-slate-200">
                   <tr>
-                    <th className="py-2.5 px-3">Subject Code</th>
-                    <th className="py-2.5 px-3">Subject Name</th>
-                    <th className="py-2.5 px-3 text-center">Total</th>
-                    <th className="py-2.5 px-3 text-center">Present</th>
-                    <th className="py-2.5 px-3 text-center">Absent</th>
-                    <th className="py-2.5 px-3 text-right">Percentage</th>
+                    <th className="py-3 px-3.5 text-center w-12">#</th>
+                    <th className="py-3 px-3.5 w-32 font-mono">Subject Code</th>
+                    <th className="py-3 px-4">Subject Name</th>
+                    <th className="py-3 px-3.5 text-center w-24">Conducted</th>
+                    <th className="py-3 px-3.5 text-center w-24">Attended</th>
+                    <th className="py-3 px-3.5 text-center w-24">Absent</th>
+                    <th className="py-3 px-4 text-right w-28">Attendance %</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {summary?.subjects?.map((sub) => (
-                    <tr key={sub.subject_id}>
-                      <td className="py-2.5 px-3 font-mono font-bold text-indigo-600">{sub.subject_code}</td>
-                      <td className="py-2.5 px-3 font-semibold text-slate-900">{sub.subject_name}</td>
-                      <td className="py-2.5 px-3 text-center font-medium">{sub.total_classes}</td>
-                      <td className="py-2.5 px-3 text-center font-semibold text-emerald-600">{sub.present_classes}</td>
-                      <td className="py-2.5 px-3 text-center font-semibold text-rose-600">{sub.absent_classes}</td>
-                      <td className="py-2.5 px-3 text-right font-bold text-slate-900">{sub.percentage}%</td>
+                  {!summary?.subjects || summary.subjects.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-400 italic">
+                        No subject attendance recorded for Semester {selectedSemester}.
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    summary.subjects.map((sub, idx) => (
+                      <tr key={sub.subject_id} className="hover:bg-slate-50 transition">
+                        <td className="py-3 px-3.5 text-center font-bold text-slate-400">{idx + 1}</td>
+                        <td className="py-3 px-3.5 font-mono font-extrabold text-indigo-700">{sub.subject_code}</td>
+                        <td className="py-3 px-4 font-bold text-slate-900 uppercase">{sub.subject_name}</td>
+                        <td className="py-3 px-3.5 text-center font-mono font-bold text-slate-800">{sub.total_classes}</td>
+                        <td className="py-3 px-3.5 text-center font-mono font-bold text-emerald-600">{sub.present_classes}</td>
+                        <td className="py-3 px-3.5 text-center font-mono font-bold text-rose-600">{sub.absent_classes}</td>
+                        <td className="py-3 px-4 text-right">
+                          <span
+                            className={`inline-block px-2.5 py-1 rounded-lg font-mono font-black text-xs ${
+                              sub.percentage >= 75
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : 'bg-rose-100 text-rose-800'
+                            }`}
+                          >
+                            {sub.percentage.toFixed(2)}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
+            </div>
+          </div>
+
+          {/* Overall % / Conducted / Attended Summary for That Semester at the Bottom */}
+          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl p-5 border border-slate-700 shadow-md">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-700/60">
+              <span className="text-xs font-black uppercase tracking-wider text-indigo-300">
+                Semester {selectedSemester} Aggregate Summary
+              </span>
+              <span className="text-xs text-slate-400 font-semibold">
+                {semestersList.find((s) => s.semester_number === selectedSemester)?.academic_year || ''}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+              <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/80">
+                <p className="text-[11px] font-bold text-indigo-300 uppercase tracking-wider">Overall %</p>
+                <p className="text-2xl sm:text-3xl font-black mt-1 text-white">
+                  {summary?.overall_percentage || 0}%
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  {summary?.overall_percentage >= 75 ? 'Meets 75% Requirement' : 'Below 75% Shortage'}
+                </p>
+              </div>
+
+              <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/80">
+                <p className="text-[11px] font-bold text-indigo-300 uppercase tracking-wider">Conducted</p>
+                <p className="text-2xl sm:text-3xl font-black mt-1 text-slate-100">
+                  {summary?.total_classes || 0}
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">Total Lectures Held</p>
+              </div>
+
+              <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/80">
+                <p className="text-[11px] font-bold text-indigo-300 uppercase tracking-wider">Attended</p>
+                <p className="text-2xl sm:text-3xl font-black mt-1 text-emerald-400">
+                  {summary?.present_classes || 0}
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  Absent: {summary?.absent_classes || 0} Lectures
+                </p>
+              </div>
             </div>
           </div>
         </Card>

@@ -20,11 +20,17 @@ def get_student_semesters(current_user: User = Depends(get_current_user), db: Se
     if not student:
         student = db.query(Student).first()
 
-    semesters = db.query(Semester).order_by(Semester.semester_number.desc()).all()
+    semesters = db.query(Semester).order_by(Semester.semester_number.asc()).all()
     results = []
 
     for sem in semesters:
-        subs = db.query(Subject).filter(Subject.semester_id == sem.id).all()
+        subs = db.query(Subject).filter(
+            Subject.semester_id == sem.id,
+            Subject.branch == student.branch
+        ).all()
+        if not subs:
+            subs = db.query(Subject).filter(Subject.semester_id == sem.id).all()
+            
         sub_ids = [s.id for s in subs]
 
         atts = db.query(Attendance).filter(
@@ -40,7 +46,7 @@ def get_student_semesters(current_user: User = Depends(get_current_user), db: Se
         results.append({
             "semester_number": sem.semester_number,
             "academic_year": sem.academic_year,
-            "is_current": sem.is_current,
+            "is_current": (sem.semester_number == student.current_semester),
             "overall_percentage": perc,
             "total_classes": t,
             "present_classes": p,
@@ -60,11 +66,16 @@ def get_attendance_summary(semester: int = None, current_user: User = Depends(ge
     target_sem_num = semester if semester else student.current_semester
     target_sem = db.query(Semester).filter(Semester.semester_number == target_sem_num).first()
 
-    # Query subjects for the targeted semester
+    # Query branch-specific subjects for the targeted semester
     if target_sem:
-        subjects = db.query(Subject).filter(Subject.semester_id == target_sem.id).all()
+        subjects = db.query(Subject).filter(
+            Subject.semester_id == target_sem.id,
+            Subject.branch == student.branch
+        ).all()
+        if not subjects:
+            subjects = db.query(Subject).filter(Subject.semester_id == target_sem.id).all()
     else:
-        subjects = db.query(Subject).all()
+        subjects = db.query(Subject).filter(Subject.branch == student.branch).all()
 
     sub_ids = [s.id for s in subjects]
 
@@ -131,7 +142,12 @@ def get_day_wise_attendance(semester: int = None, current_user: User = Depends(g
     target_sem = db.query(Semester).filter(Semester.semester_number == target_sem_num).first()
 
     if target_sem:
-        subjects = db.query(Subject).filter(Subject.semester_id == target_sem.id).all()
+        subjects = db.query(Subject).filter(
+            Subject.semester_id == target_sem.id,
+            Subject.branch == student.branch
+        ).all()
+        if not subjects:
+            subjects = db.query(Subject).filter(Subject.semester_id == target_sem.id).all()
         sub_ids = [s.id for s in subjects]
         query = db.query(Attendance).filter(Attendance.student_id == student.id, Attendance.subject_id.in_(sub_ids)) if sub_ids else db.query(Attendance).filter(Attendance.id == -1)
     else:

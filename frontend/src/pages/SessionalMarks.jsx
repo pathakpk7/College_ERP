@@ -8,14 +8,32 @@ import { Award, TrendingUp } from 'lucide-react';
 export default function SessionalMarks() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     getSessionalMarks()
       .then(setData)
+      .catch((err) => setError(err.response?.data?.detail || 'Failed to fetch sessional marks.'))
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <PageContainer><LoadingSpinner message="Fetching sessional marks..." /></PageContainer>;
+
+  if (error || !data) {
+    return (
+      <PageContainer>
+        <div className="p-6 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl flex flex-col items-start space-y-3">
+          <p className="font-bold">{error || 'Unable to load sessional marks.'}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition"
+          >
+            Retry Loading
+          </button>
+        </div>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>

@@ -13,6 +13,7 @@ class StudentProfileResponse(BaseModel):
     id: int
     user_id: int
     enrollment_number: str
+    college_id: Optional[str] = None
     full_name: str
     email: str
     phone: Optional[str] = None

@@ -43,7 +43,7 @@ def get_dashboard_data(current_user: User = Depends(get_current_user), db: Sessi
     attendances = db.query(Attendance).filter(Attendance.student_id == student.id).all()
     total_classes = len(attendances)
     present_classes = sum(1 for a in attendances if a.status == AttendanceStatus.PRESENT)
-    overall_perc = round((present_classes / total_classes * 100), 1) if total_classes > 0 else 82.5
+    overall_perc = round((present_classes / total_classes * 100), 1) if total_classes > 0 else 0.0
 
     # Dynamic Fee Status
     fees = db.query(Fee).filter(Fee.student_id == student.id).all()
@@ -67,6 +67,7 @@ def get_dashboard_data(current_user: User = Depends(get_current_user), db: Sessi
             id=student.id,
             user_id=student.user_id,
             enrollment_number=student.enrollment_number,
+            college_id=student.college_id or f"UIT{student.admission_year % 100}{student.id:04d}",
             full_name=student.full_name,
             email=student.email,
             phone=student.phone,

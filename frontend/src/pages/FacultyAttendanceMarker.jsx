@@ -457,7 +457,7 @@ export default function FacultyAttendanceMarker() {
                             <td className="py-3 px-4 font-mono font-bold text-slate-800">{s.enrollment_number}</td>
                             <td className="py-3 px-4 font-semibold text-slate-900">
                               <p>{s.full_name}</p>
-                              <p className="text-[10px] text-slate-400 font-normal">{s.email}</p>
+                              <p className="text-[10px] text-indigo-600 font-mono font-bold">{s.college_id || s.enrollment_number}</p>
                             </td>
                             <td className="py-3 px-4 text-slate-600">
                               <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold">

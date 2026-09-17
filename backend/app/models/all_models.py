@@ -30,6 +30,7 @@ class Student(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
     enrollment_number = Column(String, unique=True, index=True, nullable=False)
+    college_id = Column(String, unique=True, index=True, nullable=True)
     full_name = Column(String, nullable=False)
     email = Column(String, nullable=False)
     phone = Column(String, nullable=True)

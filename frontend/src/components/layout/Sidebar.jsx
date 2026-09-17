@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getUserInitials, getUserDisplayName, getUserAccountLabel, getUserIdentifier } from '../../utils/userUtils';
+import ProfileModal from '../common/ProfileModal';
 
 
 
@@ -53,8 +54,14 @@ const adminNavItems = [
 ];
 
 
-export default function Sidebar({ isMobileOpen = false, onCloseMobile = () => {} }) {
+export default function Sidebar({
+  isMobileOpen = false,
+  onCloseMobile = () => {},
+  isDesktopOpen = true,
+  onToggleDesktop = () => {},
+}) {
   const { logout, user } = useAuth();
+  const [profileOpen, setProfileOpen] = React.useState(false);
   const role = user?.role || 'STUDENT';
 
   let navItems = studentNavItems;
@@ -68,14 +75,21 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile = () => {}
     <div className="flex flex-col justify-between h-full">
       <div>
         {/* Header Branding */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-600/30 text-white">
-              <GraduationCap className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="font-bold text-white tracking-tight text-base">College ERP</h1>
-              <p className="text-[11px] text-indigo-400 font-bold uppercase tracking-wider">{role} PORTAL</p>
+        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center space-x-3 min-w-0">
+            <img
+              src="/app_icon.png"
+              alt="CampusERP"
+              className="w-9 h-9 rounded-xl shadow-lg shadow-cyan-500/10 object-contain shrink-0 ring-1 ring-white/10"
+            />
+            <div className="min-w-0">
+              <div className="flex items-center space-x-1">
+                <span className="font-black text-white tracking-tight text-base">Campus</span>
+                <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-teal-300 text-base">ERP</span>
+              </div>
+              <p className="text-[8px] sm:text-[9px] text-cyan-300/80 font-bold uppercase tracking-widest truncate">
+                CONNECT • MANAGE • EMPOWER
+              </p>
             </div>
           </div>
           {isMobile && (
@@ -118,8 +132,12 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile = () => {}
       {/* User Footer & Logout */}
       <div className="p-4 border-t border-slate-800 bg-slate-950/60">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2.5 truncate">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm uppercase">
+          <button
+            onClick={() => setProfileOpen(true)}
+            className="flex items-center space-x-2.5 truncate hover:opacity-80 transition cursor-pointer text-left flex-1 min-w-0"
+            title="Click to view full personal profile details"
+          >
+            <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-sm uppercase ring-2 ring-transparent hover:ring-indigo-400 transition">
               {getUserInitials(user)}
             </div>
             <div className="truncate">
@@ -135,7 +153,7 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile = () => {}
                 </span>
               </div>
             </div>
-          </div>
+          </button>
           <button
             onClick={() => {
               if (isMobile) onCloseMobile();
@@ -151,12 +169,14 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile = () => {}
     </div>
   );
 
-
-
   return (
     <>
-      {/* Desktop Sidebar (hidden on mobile/tablet, visible on lg) */}
-      <aside className="hidden lg:flex w-64 bg-slate-900 text-slate-300 flex-col justify-between shrink-0 h-screen sticky top-0 border-r border-slate-800">
+      {/* Desktop Sidebar (Toggled with hamburger or collapse button) */}
+      <aside
+        className={`hidden lg:flex bg-slate-900 text-slate-300 flex-col justify-between shrink-0 h-screen sticky top-0 border-r border-slate-800 transition-all duration-300 overflow-hidden ${
+          isDesktopOpen ? 'w-64' : 'w-0 border-r-0 opacity-0 pointer-events-none'
+        }`}
+      >
         {renderContent(false)}
       </aside>
 
@@ -174,6 +194,12 @@ export default function Sidebar({ isMobileOpen = false, onCloseMobile = () => {}
           </aside>
         </div>
       )}
+      {/* Profile Details Modal */}
+      <ProfileModal
+        isOpen={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        user={user}
+      />
     </>
   );
 }

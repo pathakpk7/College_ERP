@@ -9,14 +9,34 @@ import { Link } from 'react-router-dom';
 export default function FacultyDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     getFacultyDashboard()
       .then(setData)
+      .catch((err) => {
+        setError(err.response?.data?.detail || 'Failed to load faculty portal data.');
+      })
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <PageContainer><LoadingSpinner message="Loading faculty portal..." /></PageContainer>;
+
+  if (error || !data) {
+    return (
+      <PageContainer>
+        <div className="p-6 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl flex flex-col items-start space-y-3">
+          <p className="font-bold">{error || 'Unable to load faculty dashboard.'}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition"
+          >
+            Retry Loading
+          </button>
+        </div>
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer>
@@ -25,23 +45,23 @@ export default function FacultyDashboard() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center space-x-2 bg-indigo-500/30 border border-indigo-400/30 px-3 py-1 rounded-full text-xs font-medium text-indigo-200">
-              <span>Employee ID: {data.employee_id}</span>
+              <span>Employee ID: {data?.employee_id || 'FAC-N/A'}</span>
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight">Welcome, {data.faculty_name}!</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight">Welcome, {data?.faculty_name || 'Faculty Member'}!</h1>
             <p className="text-sm text-indigo-200/80">
-              {data.designation} &bull; {data.department}
+              {data?.designation || 'Faculty'} &bull; {data?.department || 'Department of Engineering'}
             </p>
           </div>
 
           <div className="flex items-center space-x-4 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10">
             <div>
               <p className="text-[11px] uppercase tracking-wider text-indigo-200 font-semibold">Assigned Subjects</p>
-              <p className="text-2xl font-black text-white">{data.assigned_subjects?.length}</p>
+              <p className="text-2xl font-black text-white">{data?.assigned_subjects?.length || 0}</p>
             </div>
             <div className="w-px h-8 bg-white/20"></div>
             <div>
               <p className="text-[11px] uppercase tracking-wider text-indigo-200 font-semibold">Materials Uploaded</p>
-              <p className="text-2xl font-black text-emerald-300">{data.total_materials_uploaded}</p>
+              <p className="text-2xl font-black text-emerald-300">{data?.total_materials_uploaded || 0}</p>
             </div>
           </div>
         </div>

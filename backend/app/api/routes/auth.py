@@ -45,21 +45,27 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             detail="Roll Number, Employee ID, Username, or Email is required."
         )
 
-    # Search user by username, email, student enrollment_number, or faculty employee_id / full_name
+    # Search user by username, email, student enrollment_number, college_id, or faculty employee_id / full_name
     user = db.query(User).filter(
-        (User.username == login_id) | (User.email == login_id)
+        (User.username.ilike(login_id)) | (User.email.ilike(login_id))
     ).first()
 
     if not user:
-        # Try finding via Student enrollment number
-        student = db.query(Student).filter(Student.enrollment_number == login_id).first()
+        # Try finding via Student enrollment number, college ID, or full name
+        student = db.query(Student).filter(
+            (Student.enrollment_number.ilike(login_id)) |
+            (Student.college_id.ilike(login_id)) |
+            (Student.full_name.ilike(login_id))
+        ).first()
         if student:
             user = student.user
 
     if not user:
-        # Try finding via Faculty employee ID or name or email
+        # Try finding via Faculty employee ID, name, or email
         faculty = db.query(Faculty).filter(
-            (Faculty.employee_id == login_id) | (Faculty.full_name == login_id) | (Faculty.email == login_id)
+            (Faculty.employee_id.ilike(login_id)) |
+            (Faculty.full_name.ilike(login_id)) |
+            (Faculty.email.ilike(login_id))
         ).first()
         if faculty:
             user = faculty.user
@@ -71,7 +77,7 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         )
     
     # If designation is provided for Faculty/Admin, update profile if needed
-    if request.designation and user.role == UserRole.FACULTY:
+    if request.designation and user.role in [UserRole.FACULTY, UserRole.ADMIN]:
         fac = db.query(Faculty).filter(Faculty.user_id == user.id).first()
         if fac and request.designation != fac.designation:
             fac.designation = request.designation
@@ -81,15 +87,26 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
     full_name = user.username
     account_label = user.role.value.title()
     identifier = user.username
+    college_id = None
+    roll_number = None
+    branch = None
+    section = None
+    semester = None
+    year = None
 
     if user.role == UserRole.STUDENT:
         st = db.query(Student).filter(Student.user_id == user.id).first()
         if st:
             full_name = st.full_name
             identifier = st.enrollment_number
-            calc_year = (st.current_semester + 1) // 2
+            roll_number = st.enrollment_number
+            college_id = st.college_id or f"UIT{st.admission_year % 100}{st.id:04d}"
+            branch = st.branch
+            section = st.section
+            semester = st.current_semester
+            year = (st.current_semester + 1) // 2
             branch_short = "CSE" if "computer" in st.branch.lower() else st.branch
-            account_label = f"Student • {branch_short} (Year {calc_year})"
+            account_label = f"Student • {branch_short} (Year {year})"
     elif user.role == UserRole.FACULTY:
         fac = db.query(Faculty).filter(Faculty.user_id == user.id).first()
         if fac:
@@ -97,8 +114,14 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             identifier = fac.employee_id
             account_label = f"{fac.designation or 'Faculty'} • {fac.department or 'Dept of CSE'}"
     elif user.role == UserRole.ADMIN:
-        full_name = "System Administrator"
-        account_label = "System Administrator • Campus Head"
+        fac = db.query(Faculty).filter(Faculty.user_id == user.id).first()
+        if fac:
+            full_name = fac.full_name
+            identifier = fac.employee_id
+            account_label = f"{fac.designation or 'Administrator'} • {fac.department or 'Administration'}"
+        else:
+            full_name = "System Administrator"
+            account_label = "System Administrator • Campus Head"
 
     access_token = create_access_token(subject=user.username, role=user.role.value)
     return {
@@ -107,9 +130,16 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         "role": user.role.value,
         "username": user.username,
         "user_id": user.id,
+        "email": user.email,
         "full_name": full_name,
         "account_label": account_label,
         "identifier": identifier,
+        "college_id": college_id,
+        "roll_number": roll_number,
+        "branch": branch,
+        "section": section,
+        "semester": semester,
+        "year": year,
     }
 
 
@@ -205,15 +235,26 @@ def get_me(current_user: User = Depends(get_current_user), db: Session = Depends
     full_name = current_user.username
     account_label = current_user.role.value.title()
     identifier = current_user.username
+    college_id = None
+    roll_number = None
+    branch = None
+    section = None
+    semester = None
+    year = None
 
     if current_user.role == UserRole.STUDENT:
         st = db.query(Student).filter(Student.user_id == current_user.id).first()
         if st:
             full_name = st.full_name
             identifier = st.enrollment_number
-            calc_year = (st.current_semester + 1) // 2
-            branch_short = "CSE" if "computer" in st.branch.lower() else st.branch
-            account_label = f"Student • {branch_short} (Year {calc_year})"
+            roll_number = st.enrollment_number
+            college_id = st.college_id or f"UIT{st.admission_year % 100}{st.id:04d}"
+            branch = st.branch
+            section = st.section
+            semester = st.current_semester
+            year = (st.current_semester + 1) // 2
+            branch_short = "CSE" if "computer" in (st.branch or "").lower() else st.branch
+            account_label = f"Student • {branch_short} (Year {year})"
     elif current_user.role == UserRole.FACULTY:
         fac = db.query(Faculty).filter(Faculty.user_id == current_user.id).first()
         if fac:
@@ -221,8 +262,14 @@ def get_me(current_user: User = Depends(get_current_user), db: Session = Depends
             identifier = fac.employee_id
             account_label = f"{fac.designation or 'Faculty'} • {fac.department or 'Dept of CSE'}"
     elif current_user.role == UserRole.ADMIN:
-        full_name = "System Administrator"
-        account_label = "System Administrator • Campus Head"
+        fac = db.query(Faculty).filter(Faculty.user_id == current_user.id).first()
+        if fac:
+            full_name = fac.full_name
+            identifier = fac.employee_id
+            account_label = f"{fac.designation or 'Administrator'} • {fac.department or 'Administration'}"
+        else:
+            full_name = "System Administrator"
+            account_label = "System Administrator • Campus Head"
 
     return UserResponse(
         id=current_user.id,
@@ -232,7 +279,13 @@ def get_me(current_user: User = Depends(get_current_user), db: Session = Depends
         is_active=current_user.is_active,
         full_name=full_name,
         account_label=account_label,
-        identifier=identifier
+        identifier=identifier,
+        college_id=college_id,
+        roll_number=roll_number,
+        branch=branch,
+        section=section,
+        semester=semester,
+        year=year
     )
 
 

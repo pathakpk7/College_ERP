@@ -9,11 +9,17 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const handleUnauthorized = () => {
+      setUser(null);
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+
     const token = localStorage.getItem('token');
     if (token) {
       getCurrentUser()
         .then((userData) => {
-          if (userData && userData.full_name) {
+          if (userData && (userData.full_name || userData.role)) {
             setUser((prev) => {
               const updated = { ...prev, ...userData };
               localStorage.setItem('user', JSON.stringify(updated));
@@ -22,9 +28,20 @@ export const AuthProvider = ({ children }) => {
           }
         })
         .catch(() => {
-          // Token might be invalid or expired; leave as is or let API interceptor handle 401
+          // Token is expired or invalid -> clear user state and local storage immediately
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
         });
+    } else {
+      // If no token exists, ensure user is not stuck in state
+      localStorage.removeItem('user');
+      setUser(null);
     }
+
+    return () => {
+      window.removeEventListener('auth:unauthorized', handleUnauthorized);
+    };
   }, []);
 
 

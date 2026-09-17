@@ -17,6 +17,13 @@ class Token(BaseModel):
     full_name: Optional[str] = None
     account_label: Optional[str] = None
     identifier: Optional[str] = None
+    email: Optional[str] = None
+    college_id: Optional[str] = None
+    roll_number: Optional[str] = None
+    branch: Optional[str] = None
+    section: Optional[str] = None
+    semester: Optional[int] = None
+    year: Optional[int] = None
 
 
 
@@ -66,6 +73,12 @@ class UserResponse(BaseModel):
     full_name: Optional[str] = None
     account_label: Optional[str] = None
     identifier: Optional[str] = None
+    college_id: Optional[str] = None
+    roll_number: Optional[str] = None
+    branch: Optional[str] = None
+    section: Optional[str] = None
+    semester: Optional[int] = None
+    year: Optional[int] = None
 
     class Config:
         from_attributes = True

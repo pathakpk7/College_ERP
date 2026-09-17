@@ -72,15 +72,15 @@ export default function Sms() {
         <form onSubmit={handleSend} className="space-y-4 text-xs">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Select Recipient</label>
+              <label className="block font-semibold text-slate-700 mb-1">Select Official Recipient / Cell</label>
               <select
                 value={form.receiver_username}
                 onChange={(e) => setForm({ ...form, receiver_username: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-medium text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               >
-                {recipients.map((r) => (
-                  <option key={r.username} value={r.username}>
-                    {r.username} ({r.role})
+                {recipients.map((r, idx) => (
+                  <option key={r.username + '_' + idx} value={r.username}>
+                    {r.label || `${r.username} (${r.role})`}
                   </option>
                 ))}
               </select>

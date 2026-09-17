@@ -360,10 +360,10 @@ export default function FacultyClassView() {
                   <table className="w-full text-left text-xs">
                     <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
                       <tr>
-                        <th className="py-3 px-4">Roll Number / Enrollment No.</th>
+                        <th className="py-3 px-4">Roll Number / Enrollment</th>
+                        <th className="py-3 px-4">College ID</th>
                         <th className="py-3 px-4">Student Full Name</th>
                         <th className="py-3 px-4">Branch & Section</th>
-                        <th className="py-3 px-4">Email</th>
                         <th className="py-3 px-4 text-center">CGPA</th>
                         <th className="py-3 px-4 text-center">Active Backlogs</th>
                       </tr>
@@ -371,10 +371,10 @@ export default function FacultyClassView() {
                     <tbody className="divide-y divide-slate-100">
                       {students.map((s) => (
                         <tr key={s.id} className="hover:bg-slate-50/70">
-                          <td className="py-3 px-4 font-mono font-bold text-indigo-600">{s.enrollment_number}</td>
+                          <td className="py-3 px-4 font-mono font-bold text-slate-800">{s.enrollment_number}</td>
+                          <td className="py-3 px-4 font-mono font-bold text-indigo-600">{s.college_id || 'UIT26xxxx'}</td>
                           <td className="py-3 px-4 font-semibold text-slate-900">{s.full_name}</td>
                           <td className="py-3 px-4 text-slate-600">{s.branch} (Sem {s.semester}-{s.section})</td>
-                          <td className="py-3 px-4 font-mono text-slate-500">{s.email}</td>
                           <td className="py-3 px-4 text-center font-bold text-slate-800">{s.cgpa || '8.5'}</td>
                           <td className="py-3 px-4 text-center font-semibold text-slate-600">
                             {s.backlogs > 0 ? (

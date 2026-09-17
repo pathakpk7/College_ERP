@@ -164,11 +164,11 @@ def get_enrolled_students(
         {
             "id": s.id,
             "enrollment_number": s.enrollment_number,
+            "college_id": s.college_id,
             "full_name": s.full_name,
             "branch": s.branch,
             "semester": s.current_semester,
             "section": s.section,
-            "email": s.email,
             "cgpa": s.cgpa,
             "backlogs": s.backlogs
         }
